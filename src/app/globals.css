@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* Tier 1: literal brand tokens (also used as Tailwind utilities: bg-brand, text-on-brand…). */
+@theme {
+  /* Keep in sync with BRAND_COLOR in src/constants/app.ts. */
+  --color-brand: #13294b;
+  --color-on-brand: #ffffff;
+  --color-on-brand-muted: #cbd5e1;
+}
+
+/* Tier 2: semantic tokens that follow the user's light/dark preference. */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-accent: var(--accent);
+}
+
+@layer base {
+  :root {
+    /* Browser UI (scrollbars, form controls, canvas) follows the system scheme. */
+    color-scheme: light dark;
+
+    --surface: #f7f9fc;
+    --fg: #0f172a;
+    --fg-muted: #475569;
+    --accent: #0f766e;
+    --target-size: 24px;
+
+    @media (prefers-color-scheme: dark) {
+      --surface: #0b1730;
+      --fg: #f1f5f9;
+      --fg-muted: #cbd5e1;
+      --accent: #5eead4;
+    }
+
+    /* Fingertips need bigger targets than a mouse pointer (WCAG 2.5.5). */
+    @media (pointer: coarse) {
+      --target-size: 44px;
+    }
+
+    accent-color: var(--accent);
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--fg);
+    line-height: 1.5;
+    overflow-wrap: break-word;
+  }
+
+  :where(h1, h2, h3) {
+    text-wrap: balance;
+  }
+
+  :where(p, li) {
+    text-wrap: pretty;
+  }
+
+  :where(a, code) {
+    overflow-wrap: anywhere;
+  }
+
+  :where(
+    button,
+    select,
+    textarea,
+    input:not([type="checkbox"], [type="radio"]),
+    [role="button"],
+    nav a,
+    label:has(input[type="checkbox"], input[type="radio"])
+  ) {
+    min-block-size: var(--target-size);
+    min-inline-size: var(--target-size);
+  }
+
+  :where([role="button"], nav a, label:has(input[type="checkbox"], input[type="radio"])) {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  :where(a:any-link, button, input, select, textarea, summary):focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+}
+
+/* Edge-to-edge screens (viewport-fit=cover): keep content clear of the notch and home indicator. */
+@utility safe-area-pad {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+}

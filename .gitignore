@@ -43,3 +43,11 @@ next-env.d.ts
 
 # Internal planning docs (kept local, not published)
 /docs/
+
+# Certificates / keys
+*.pem
+*.key
+
+# Playwright
+/blob-report/
+/playwright/.cache/
