@@ -1,0 +1,65 @@
+-- Test helpers, created inside each test's transaction (rolled back at the end).
+-- Users are synthetic (example.test); no real data.
+create extension if not exists pgtap with schema extensions;
+
+create schema tests;
+grant usage on schema tests to anon, authenticated;
+
+create table tests.users (name text primary key, id uuid not null);
+grant select on tests.users to anon, authenticated;
+
+create function tests.create_user(p_name text)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_id uuid := gen_random_uuid();
+begin
+  insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+  values (v_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    p_name || '@example.test', '', now(), '{}'::jsonb, '{}'::jsonb, now(), now());
+  insert into tests.users values (p_name, v_id);
+  return v_id;
+end;
+$$;
+
+-- Switches the current transaction to the given user (RLS applies). Undo with `reset role`.
+create function tests.authenticate_as(p_name text)
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', (select u.id from tests.users u where u.name = p_name), 'role', 'authenticated')::text,
+    true);
+  perform set_config('role', 'authenticated', true);
+end;
+$$;
+
+create function tests.account_of(p_name text)
+returns uuid
+language sql
+security definer
+as $$
+  select m.account_id
+  from public.account_members m
+  join tests.users u on u.id = m.user_id
+  where u.name = p_name;
+$$;
+
+-- Runs a statement as the current role and returns how many rows it affected.
+create function tests.rows_affected(p_sql text)
+returns integer
+language plpgsql
+as $$
+declare
+  v_count integer;
+begin
+  execute p_sql;
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$$;
+
+grant execute on all functions in schema tests to anon, authenticated;

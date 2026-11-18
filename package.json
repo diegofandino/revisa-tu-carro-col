@@ -12,7 +12,10 @@
     "test:coverage": "bun test --coverage",
     "test:e2e": "playwright test",
     "icons": "bun scripts/generate-icons.ts",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db && ./supabase/tests/concurrency/vehicle_limit.sh",
+    "db:advisors": "supabase db advisors"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

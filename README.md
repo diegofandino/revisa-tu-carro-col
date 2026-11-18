@@ -52,7 +52,10 @@ bun run dev                       # http://localhost:3000
 | `bun run test:coverage` | Unit tests with coverage (90% lines/functions)                                          |
 | `bun run test:e2e`      | Production build + Playwright smoke tests (first run: `bunx playwright install webkit`) |
 | `bun run build`         | Production build                                                                        |
-| `bun run icons`         | Regenerate PWA icons from `assets/icon/icon.svg`                                        |
+| `bun run icons`         | Regenerate PWA icons from `assets/icon/icon-source.png`                                 |
+| `bun run db:reset`      | Recreate the local database from `supabase/migrations` (local only)                     |
+| `bun run db:test`       | pgTAP database tests (RLS, invariants) + concurrency test for the vehicle limit         |
+| `bun run db:advisors`   | Supabase security/performance advisors on the local database                            |
 
 ## Project structure
 
@@ -60,7 +63,7 @@ bun run dev                       # http://localhost:3000
 src/app/            Routes, layout, manifest, icons
 src/lib/            Env validation, security (CSP), Supabase clients
 src/proxy.ts        Per-request CSP nonce + Supabase session refresh
-supabase/           Local Supabase configuration (migrations come next)
+supabase/           Local config, migrations (schema, RLS) and database tests
 e2e/                Playwright tests
 assets/icon/        Icon source (SVG)
 scripts/            Maintenance scripts (icon generation)
