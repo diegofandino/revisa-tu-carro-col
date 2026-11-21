@@ -1,14 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { publicEnv } from "@/lib/env";
+import { routeRedirect } from "@/lib/routing/route-redirect";
 import { buildCsp, generateNonce } from "@/lib/security/csp";
 
 /**
  * Runs before each matched request:
  * 1. Generates a per-request CSP nonce (Next.js applies it to its own scripts).
  * 2. Refreshes the Supabase session cookie (pattern from the official Next.js + Supabase example).
- * Route protection (redirect to login) is added with the auth task; authorization is always
- * re-checked on the server and by RLS, never only here.
+ * 3. Redirects between guest and protected routes (UX only; pages, Server Actions and RLS
+ *    re-check authorization, never only here).
  */
 export async function proxy(request: NextRequest) {
   const env = publicEnv();
@@ -45,7 +46,16 @@ export async function proxy(request: NextRequest) {
   });
 
   // Do not run code between createServerClient and getClaims(): it refreshes the session.
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+  const signedIn = Boolean(data?.claims?.sub);
+
+  // UX redirects only: pages and Server Actions re-check the session, and RLS protects the data.
+  const redirectTo = routeRedirect(request.nextUrl.pathname, request.nextUrl.search, signedIn);
+  if (redirectTo) {
+    const redirect = NextResponse.redirect(new URL(redirectTo, request.url));
+    for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+    return redirect;
+  }
 
   response.headers.set("Content-Security-Policy", csp);
   return response;

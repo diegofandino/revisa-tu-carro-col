@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import "./globals.css";
 import { APP_LOCALE, APP_NAME, BRAND_COLOR } from "@/constants/app";
 
@@ -24,7 +25,9 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Every page renders per request so the CSP nonce from the proxy can be applied.
+  await connection();
   return (
     <html lang={APP_LOCALE}>
       <body>{children}</body>

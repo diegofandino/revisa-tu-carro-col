@@ -42,20 +42,20 @@ bun run dev                       # http://localhost:3000
 
 ### Scripts
 
-| Command                 | Description                                                                             |
-| ----------------------- | --------------------------------------------------------------------------------------- |
-| `bun run dev`           | Start the development server                                                            |
-| `bun run lint`          | Biome lint + format check                                                               |
-| `bun run format`        | Apply Biome formatting                                                                  |
-| `bun run typecheck`     | Route type generation + TypeScript check                                                |
-| `bun run test`          | Unit tests (`bun test`)                                                                 |
-| `bun run test:coverage` | Unit tests with coverage (90% lines/functions)                                          |
-| `bun run test:e2e`      | Production build + Playwright smoke tests (first run: `bunx playwright install webkit`) |
-| `bun run build`         | Production build                                                                        |
-| `bun run icons`         | Regenerate PWA icons from `assets/icon/icon-source.png`                                 |
-| `bun run db:reset`      | Recreate the local database from `supabase/migrations` (local only)                     |
-| `bun run db:test`       | pgTAP database tests (RLS, invariants) + concurrency test for the vehicle limit         |
-| `bun run db:advisors`   | Supabase security/performance advisors on the local database                            |
+| Command                 | Description                                                                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`           | Start the development server                                                                                                     |
+| `bun run lint`          | Biome lint + format check                                                                                                        |
+| `bun run format`        | Apply Biome formatting                                                                                                           |
+| `bun run typecheck`     | Route type generation + TypeScript check                                                                                         |
+| `bun run test`          | Unit tests (`bun test`)                                                                                                          |
+| `bun run test:coverage` | Unit tests with coverage (90% lines/functions)                                                                                   |
+| `bun run test:e2e`      | Production build + Playwright tests against local Supabase (needs `supabase start`; first run: `bunx playwright install webkit`) |
+| `bun run build`         | Production build                                                                                                                 |
+| `bun run icons`         | Regenerate PWA icons from `assets/icon/icon-source.png`                                                                          |
+| `bun run db:reset`      | Recreate the local database from `supabase/migrations` (local only)                                                              |
+| `bun run db:test`       | pgTAP database tests (RLS, invariants) + concurrency test for the vehicle limit                                                  |
+| `bun run db:advisors`   | Supabase security/performance advisors on the local database                                                                     |
 
 ## Project structure
 

@@ -2,6 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 const port = 3100;
 
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is not set. Run e2e tests with: bun run test:e2e (uses local Supabase).`);
+  return value;
+}
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -14,12 +20,13 @@ export default defineConfig({
     // Production build so headers/CSP match what users get.
     command: `bun run build && bun run start -- -p ${port}`,
     url: `http://127.0.0.1:${port}`,
-    reuseExistingServer: !process.env.CI,
+    // Always a fresh server, so tests never run against a stale build.
+    reuseExistingServer: false,
     timeout: 180_000,
-    // Fictitious values: the smoke tests do not talk to Supabase.
+    // Provided by scripts/with-local-supabase.sh (local Supabase stack only).
     env: {
-      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_EXAMPLE_NOT_A_REAL_KEY_000000",
+      NEXT_PUBLIC_SUPABASE_URL: requiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: requiredEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
     },
   },
 });

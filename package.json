@@ -10,7 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "bun test",
     "test:coverage": "bun test --coverage",
-    "test:e2e": "playwright test",
+    "test:e2e": "scripts/with-local-supabase.sh playwright test",
     "icons": "bun scripts/generate-icons.ts",
     "format": "biome format --write",
     "db:reset": "supabase db reset",
