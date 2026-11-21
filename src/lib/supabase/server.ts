@@ -1,7 +1,9 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { publicEnv } from "@/lib/env";
+import { isHttpsRequest } from "@/lib/security/request";
+import { sessionCookieOptions } from "./cookie-options";
 
 /**
  * Supabase client for Server Components, Server Actions and Route Handlers.
@@ -10,9 +12,11 @@ import { publicEnv } from "@/lib/env";
  */
 export async function createClient() {
   const cookieStore = await cookies();
+  const requestHeaders = await headers();
   const env = publicEnv();
 
   return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+    cookieOptions: sessionCookieOptions(isHttpsRequest(requestHeaders.get("x-forwarded-proto"), null)),
     cookies: {
       getAll() {
         return cookieStore.getAll();

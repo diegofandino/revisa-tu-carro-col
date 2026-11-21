@@ -160,3 +160,18 @@ test("auth pages load without CSP violations or errors", async ({ page }) => {
   }
   expect(problems).toEqual([]);
 });
+
+test("the session cookie is HttpOnly and not readable by JavaScript", async ({ page, context }) => {
+  await signUpAndConfirm(page, uniqueEmail("cookie"));
+  const session = (await context.cookies()).filter((c) => /^sb-.+-auth-token/.test(c.name));
+  expect(session.length).toBeGreaterThan(0);
+  for (const cookie of session) {
+    expect(cookie.httpOnly, cookie.name).toBe(true);
+    expect(cookie.sameSite, cookie.name).toBe("Lax");
+  }
+  expect(await page.evaluate(() => document.cookie)).not.toContain("auth-token");
+
+  // The session still works across navigations (refreshed server-side by the proxy).
+  await page.goto("/panel");
+  await expect(page.getByText("Sesión iniciada como")).toBeVisible();
+});

@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { publicEnv } from "@/lib/env";
 import { routeRedirect } from "@/lib/routing/route-redirect";
 import { buildCsp, generateNonce } from "@/lib/security/csp";
+import { isHttpsRequest } from "@/lib/security/request";
+import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
 /**
  * Runs before each matched request:
@@ -14,11 +16,11 @@ import { buildCsp, generateNonce } from "@/lib/security/csp";
 export async function proxy(request: NextRequest) {
   const env = publicEnv();
   const nonce = generateNonce();
+  const isHttps = isHttpsRequest(request.headers.get("x-forwarded-proto"), request.nextUrl.protocol);
   const csp = buildCsp({
     nonce,
     isDev: process.env.NODE_ENV === "development",
-    // Behind a TLS-terminating proxy (e.g. Vercel) the original scheme arrives in x-forwarded-proto.
-    isHttps: (request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "")) === "https",
+    isHttps,
     supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
   });
 
@@ -32,6 +34,7 @@ export async function proxy(request: NextRequest) {
   let response = nextWithHeaders();
 
   const supabase = createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+    cookieOptions: sessionCookieOptions(isHttps),
     cookies: {
       getAll() {
         return request.cookies.getAll();
