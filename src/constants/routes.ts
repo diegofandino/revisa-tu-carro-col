@@ -6,9 +6,6 @@ export const ROUTES = {
   resetPassword: "/restablecer",
   authConfirm: "/auth/confirm",
   dashboard: "/panel",
-  vehicles: "/panel/vehiculos",
-  newVehicle: "/panel/vehiculos/nuevo",
-  archivedVehicles: "/panel/vehiculos/archivados",
 } as const;
 
 /** Routes that require a session (checked again on the server; the proxy only improves UX). */
