@@ -17,3 +17,14 @@ export function formatKm(km: number): string {
 export function formatDate(isoDate: string): string {
   return dateFormatter.format(new Date(`${isoDate}T00:00:00Z`));
 }
+
+/** "Cada 5.000 km o 6 meses (lo que ocurra primero)", or the legal-document wording. */
+export function formatInterval(kind: "mechanical" | "legal", intervalKm: number | null, intervalMonths: number | null) {
+  if (kind === "legal") return "Según la fecha de vencimiento del documento";
+  const parts = [
+    intervalKm !== null ? formatKm(intervalKm) : null,
+    intervalMonths !== null ? `${intervalMonths} ${intervalMonths === 1 ? "mes" : "meses"}` : null,
+  ].filter(Boolean);
+  if (parts.length === 2) return `Cada ${parts[0]} o ${parts[1]} (lo que ocurra primero)`;
+  return parts.length === 1 ? `Cada ${parts[0]}` : "Sin intervalo";
+}

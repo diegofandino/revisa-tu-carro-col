@@ -112,3 +112,37 @@ describe("dbErrorMessage — odometer readings", () => {
     expect(dbErrorMessage(error)).toBe(expected);
   });
 });
+
+describe("dbErrorMessage — maintenance rules", () => {
+  const cases = [
+    {
+      name: "mechanical rule without interval",
+      error: { code: "P0001", message: "interval_required" },
+      expected: "Escribe cada cuántos km, cada cuántos meses, o ambos.",
+    },
+    {
+      name: "legal rule with interval",
+      error: { code: "P0001", message: "legal_type_has_no_interval" },
+      expected: "SOAT y técnico-mecánica no usan intervalo: se recuerdan por su fecha de vencimiento.",
+    },
+    {
+      name: "type for another vehicle class",
+      error: { code: "P0001", message: "type_not_applicable" },
+      expected: "Ese mantenimiento no aplica para este tipo de vehículo.",
+    },
+    {
+      name: "unknown maintenance type",
+      error: { code: "P0001", message: "maintenance_type_not_found" },
+      expected: "Elige un mantenimiento de la lista.",
+    },
+  ];
+
+  it.each(cases)("$name", ({ error, expected }) => {
+    expect(dbErrorMessage(error)).toBe(expected);
+  });
+
+  it("uses the caller's message for duplicates (e.g. a second current rule)", () => {
+    const duplicate = "Ya tienes una regla vigente para ese mantenimiento.";
+    expect(dbErrorMessage({ code: "23505" }, { duplicate })).toBe(duplicate);
+  });
+});

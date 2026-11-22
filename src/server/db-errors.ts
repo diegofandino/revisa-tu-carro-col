@@ -30,6 +30,11 @@ const P0001_MESSAGES: Record<string, (detail: Record<string, string>) => string>
   last_reading: () => "No puedes eliminar la única lectura del vehículo.",
   service_reading_immutable: () => "Esta lectura viene de un servicio. Para corregirla, anula ese servicio.",
   reading_deleted: () => "Esa lectura ya fue eliminada.",
+  interval_required: () => "Escribe cada cuántos km, cada cuántos meses, o ambos.",
+  legal_type_has_no_interval: () =>
+    "SOAT y técnico-mecánica no usan intervalo: se recuerdan por su fecha de vencimiento.",
+  type_not_applicable: () => "Ese mantenimiento no aplica para este tipo de vehículo.",
+  maintenance_type_not_found: () => "Elige un mantenimiento de la lista.",
 };
 
 /** Parses trigger details like "limit=1" or "previous_km=45000". */
@@ -48,14 +53,14 @@ function parseDetail(details: string | null | undefined): Record<string, string>
  * Maps database errors to user-facing Spanish messages. Only known, safe information is shown:
  * never raw messages, SQL, constraint names or internal ids.
  */
-export function dbErrorMessage(error: DbError): string {
+export function dbErrorMessage(error: DbError, overrides: { duplicate?: string } = {}): string {
   switch (error.code) {
     case "P0001": {
       const key = error.message ?? "";
       return Object.hasOwn(P0001_MESSAGES, key) ? P0001_MESSAGES[key](parseDetail(error.details)) : GENERIC_DB_ERROR;
     }
     case "23505":
-      return "Ya tienes un vehículo con esa placa.";
+      return overrides.duplicate ?? "Ya tienes un vehículo con esa placa.";
     case "23514":
     case "22P02":
       return "Revisa los datos e inténtalo de nuevo.";
