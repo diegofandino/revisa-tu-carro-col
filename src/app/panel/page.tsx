@@ -3,14 +3,14 @@ import Link from "next/link";
 import { VehicleCard } from "@/components/vehicles/vehicle-card";
 import { APP_NAME } from "@/constants/app";
 import { ROUTES } from "@/constants/routes";
-import { listVehicles } from "@/server/repositories/vehicles";
+import { listActiveVehicles } from "@/server/repositories/vehicles";
 import { loadDashboardContext } from "@/server/vehicles/load";
 
 export const metadata: Metadata = { title: `Mis vehículos | ${APP_NAME}` };
 
 export default async function PanelPage() {
   const { supabase, account } = await loadDashboardContext();
-  const vehicles = await listVehicles(supabase, { archived: false });
+  const vehicles = await listActiveVehicles(supabase);
   const limit = account?.vehicleLimit ?? 0;
   const atLimit = vehicles.length >= limit;
 

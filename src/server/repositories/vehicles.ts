@@ -26,18 +26,28 @@ interface VehicleRow {
   year: number | null;
   plate: string | null;
   archived_at: string | null;
-  odometer_readings: { km: number; reading_date: string; deleted_at: string | null }[];
+  /** At most one element: the highest active reading (see withLatestReading). */
+  odometer_readings: { km: number; reading_date: string }[];
 }
 
-const VEHICLE_COLUMNS =
-  "id, class, alias, brand, model, year, plate, archived_at, odometer_readings(km, reading_date, deleted_at)";
+const VEHICLE_COLUMNS = "id, class, alias, brand, model, year, plate, archived_at, odometer_readings(km, reading_date)";
+const READINGS = "odometer_readings";
+
+/**
+ * Embeds only the current reading (highest active km, latest date on ties) instead of the whole
+ * history: the payload stays constant and PostgREST's max_rows cap can never truncate it.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: postgrest builder generics differ between list and single queries
+function withLatestReading<Q extends { is: any; order: any; limit: any }>(query: Q): Q {
+  return query
+    .is(`${READINGS}.deleted_at`, null)
+    .order("km", { referencedTable: READINGS, ascending: false })
+    .order("reading_date", { referencedTable: READINGS, ascending: false })
+    .limit(1, { referencedTable: READINGS });
+}
 
 function toSummary(row: VehicleRow): VehicleSummary {
-  const active = row.odometer_readings.filter((r) => r.deleted_at === null);
-  const latest = active.reduce<(typeof active)[number] | null>(
-    (best, r) => (!best || r.km > best.km || (r.km === best.km && r.reading_date > best.reading_date) ? r : best),
-    null,
-  );
+  const latest = row.odometer_readings[0] ?? null;
   return {
     id: row.id,
     class: row.class,
@@ -52,21 +62,53 @@ function toSummary(row: VehicleRow): VehicleSummary {
   };
 }
 
-export async function listVehicles(supabase: SupabaseClient, { archived }: { archived: boolean }) {
-  let query = supabase.from("vehicles").select(VEHICLE_COLUMNS).order("created_at", { ascending: true });
-  query = archived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
-  const { data, error } = await query.returns<VehicleRow[]>();
+/** Active vehicles: bounded by the plan's vehicle limit, so no pagination is needed. */
+export async function listActiveVehicles(supabase: SupabaseClient): Promise<VehicleSummary[]> {
+  const query = supabase
+    .from("vehicles")
+    .select(VEHICLE_COLUMNS)
+    .is("archived_at", null)
+    .order("created_at", { ascending: true });
+  const { data, error } = await withLatestReading(query).returns<VehicleRow[]>();
   if (error) throw new Error("Could not load vehicles");
   return data.map(toSummary);
 }
 
+export interface VehiclePage {
+  vehicles: VehicleSummary[];
+  total: number;
+}
+
+/** Archived vehicles are unbounded: always paginated (most recently archived first). */
+export async function listArchivedVehicles(
+  supabase: SupabaseClient,
+  range: { from: number; to: number },
+): Promise<VehiclePage> {
+  const query = supabase
+    .from("vehicles")
+    .select(VEHICLE_COLUMNS, { count: "exact" })
+    .not("archived_at", "is", null)
+    .order("archived_at", { ascending: false })
+    .order("id", { ascending: true })
+    .range(range.from, range.to);
+  const { data, error, count } = await withLatestReading(query).returns<VehicleRow[]>();
+  // PGRST103: the requested range starts past the last row (e.g. ?pagina=99). Not an error for users.
+  if (error?.code === "PGRST103") {
+    const { count: total, error: countError } = await supabase
+      .from("vehicles")
+      .select("id", { count: "exact", head: true })
+      .not("archived_at", "is", null);
+    if (countError) throw new Error("Could not count archived vehicles");
+    return { vehicles: [], total: total ?? 0 };
+  }
+  if (error) throw new Error("Could not load archived vehicles");
+  return { vehicles: data.map(toSummary), total: count ?? 0 };
+}
+
 /** Returns null when the vehicle doesn't exist or belongs to another account (RLS hides it). */
 export async function getVehicle(supabase: SupabaseClient, id: string): Promise<VehicleSummary | null> {
-  const { data, error } = await supabase
-    .from("vehicles")
-    .select(VEHICLE_COLUMNS)
-    .eq("id", id)
-    .maybeSingle<VehicleRow>();
+  const query = supabase.from("vehicles").select(VEHICLE_COLUMNS).eq("id", id);
+  const { data, error } = await withLatestReading(query).maybeSingle<VehicleRow>();
   if (error) throw new Error("Could not load vehicle");
   return data ? toSummary(data) : null;
 }

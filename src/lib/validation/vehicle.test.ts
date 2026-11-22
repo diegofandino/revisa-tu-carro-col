@@ -5,7 +5,7 @@ import { createVehicleSchema, normalizePlate, uuidSchema, vehicleSchema } from "
 const nextYear = new Date().getFullYear() + 1;
 const valid = { class: "car", alias: "Mi carro", currentKm: "45000" };
 
-describe("createVehicleSchema", () => {
+describe("createVehicleSchema — valid input", () => {
   it("parses a minimal vehicle; optional fields become null", () => {
     expect(createVehicleSchema.parse(valid)).toEqual({
       class: "car",
@@ -19,21 +19,39 @@ describe("createVehicleSchema", () => {
   });
 
   it("trims text and normalizes the plate like the database", () => {
-    const r = createVehicleSchema.parse({
+    const parsed = createVehicleSchema.parse({
       ...valid,
       alias: "  Moto  ",
       brand: " Yamaha ",
       model: "",
       plate: "abc-12d",
     });
-    expect(r).toMatchObject({ alias: "Moto", brand: "Yamaha", model: null, plate: "ABC12D" });
+    expect(parsed).toMatchObject({ alias: "Moto", brand: "Yamaha", model: null, plate: "ABC12D" });
   });
 
+  it.each([
+    { name: "km 0", input: { currentKm: "0" } },
+    { name: "km 2,000,000 (maximum)", input: { currentKm: "2000000" } },
+    { name: "year 1950 (minimum)", input: { year: "1950" } },
+    { name: "next year (maximum)", input: { year: String(nextYear) } },
+    { name: "a 5-character plate", input: { plate: "ABC12" } },
+    { name: "a 7-character plate", input: { plate: "ABC123D" } },
+  ])("accepts $name", ({ input }) => {
+    expect(createVehicleSchema.safeParse({ ...valid, ...input }).success).toBe(true);
+  });
+
+  it("ignores fields that are not part of the schema (no mass assignment)", () => {
+    const parsed = createVehicleSchema.parse({ ...valid, account_id: "x", archived_at: "now", created_by: "y" });
+    expect(Object.keys(parsed).sort()).toEqual(["alias", "brand", "class", "currentKm", "model", "plate", "year"]);
+  });
+});
+
+describe("createVehicleSchema — invalid input", () => {
   it("requires class, alias and km with Spanish messages", () => {
-    const r = createVehicleSchema.safeParse({});
-    expect(r.success).toBe(false);
-    if (!r.success) {
-      expect(fieldErrorsFrom(r.error)).toMatchObject({
+    const result = createVehicleSchema.safeParse({});
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(fieldErrorsFrom(result.error)).toMatchObject({
         class: "Elige si es carro o moto.",
         alias: "Escribe un nombre para el vehículo.",
         currentKm: "Escribe el kilometraje actual.",
@@ -41,40 +59,26 @@ describe("createVehicleSchema", () => {
     }
   });
 
-  it("rejects an unknown class", () => {
-    expect(createVehicleSchema.safeParse({ ...valid, class: "truck" }).success).toBe(false);
-  });
-
-  it("accepts km 0 and 2,000,000; rejects decimals, separators, negatives and above the max", () => {
-    expect(createVehicleSchema.safeParse({ ...valid, currentKm: "0" }).success).toBe(true);
-    expect(createVehicleSchema.safeParse({ ...valid, currentKm: "2000000" }).success).toBe(true);
-    for (const km of ["2000001", "45.000", "45,5", "-1", "abc", ""]) {
-      expect(createVehicleSchema.safeParse({ ...valid, currentKm: km }).success, km).toBe(false);
-    }
-  });
-
-  it("checks the year range 1950..next year", () => {
-    expect(createVehicleSchema.safeParse({ ...valid, year: "1950" }).success).toBe(true);
-    expect(createVehicleSchema.safeParse({ ...valid, year: String(nextYear) }).success).toBe(true);
-    expect(createVehicleSchema.safeParse({ ...valid, year: "1949" }).success).toBe(false);
-    expect(createVehicleSchema.safeParse({ ...valid, year: String(nextYear + 1) }).success).toBe(false);
-    expect(createVehicleSchema.safeParse({ ...valid, year: "20" }).success).toBe(false);
-  });
-
-  it("validates the plate length and characters", () => {
-    expect(createVehicleSchema.safeParse({ ...valid, plate: "AB12" }).success).toBe(false);
-    expect(createVehicleSchema.safeParse({ ...valid, plate: "ABCD1234" }).success).toBe(false);
-    expect(createVehicleSchema.safeParse({ ...valid, plate: "AB#123" }).success).toBe(false);
-  });
-
-  it("limits text lengths", () => {
-    expect(createVehicleSchema.safeParse({ ...valid, alias: "a".repeat(51) }).success).toBe(false);
-    expect(createVehicleSchema.safeParse({ ...valid, brand: "b".repeat(51) }).success).toBe(false);
-  });
-
-  it("ignores fields that are not part of the schema (no mass assignment)", () => {
-    const r = createVehicleSchema.parse({ ...valid, account_id: "x", archived_at: "now", created_by: "y" });
-    expect(Object.keys(r).sort()).toEqual(["alias", "brand", "class", "currentKm", "model", "plate", "year"]);
+  it.each([
+    { name: "an unknown class", input: { class: "truck" }, field: "class" },
+    { name: "km above the maximum", input: { currentKm: "2000001" }, field: "currentKm" },
+    { name: "km with a thousands separator", input: { currentKm: "45.000" }, field: "currentKm" },
+    { name: "km with decimals", input: { currentKm: "45,5" }, field: "currentKm" },
+    { name: "negative km", input: { currentKm: "-1" }, field: "currentKm" },
+    { name: "km as text", input: { currentKm: "abc" }, field: "currentKm" },
+    { name: "empty km", input: { currentKm: "" }, field: "currentKm" },
+    { name: "year 1949", input: { year: "1949" }, field: "year" },
+    { name: "a year after next year", input: { year: String(nextYear + 1) }, field: "year" },
+    { name: "a 2-digit year", input: { year: "20" }, field: "year" },
+    { name: "a 4-character plate", input: { plate: "AB12" }, field: "plate" },
+    { name: "an 8-character plate", input: { plate: "ABCD1234" }, field: "plate" },
+    { name: "a plate with symbols", input: { plate: "AB#123" }, field: "plate" },
+    { name: "an alias over 50 characters", input: { alias: "a".repeat(51) }, field: "alias" },
+    { name: "a brand over 50 characters", input: { brand: "b".repeat(51) }, field: "brand" },
+  ])("rejects $name", ({ input, field }) => {
+    const result = createVehicleSchema.safeParse({ ...valid, ...input });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(Object.keys(fieldErrorsFrom(result.error))).toEqual([field]);
   });
 });
 
@@ -84,13 +88,22 @@ describe("vehicleSchema (edit)", () => {
   });
 });
 
-describe("normalizePlate / uuidSchema", () => {
-  it("normalizes plates", () => {
-    expect(normalizePlate(" abc 123 ")).toBe("ABC123");
+describe("normalizePlate", () => {
+  it.each([
+    { input: " abc 123 ", expected: "ABC123" },
+    { input: "abc-12d", expected: "ABC12D" },
+    { input: "ABC123", expected: "ABC123" },
+  ])("'$input' → '$expected'", ({ input, expected }) => {
+    expect(normalizePlate(input)).toBe(expected);
   });
+});
 
-  it("validates UUIDs", () => {
-    expect(uuidSchema.safeParse("6f1c1f9e-6c5a-4b8e-9a7b-2d3c4e5f6a7b").success).toBe(true);
-    expect(uuidSchema.safeParse("1 or 1=1").success).toBe(false);
+describe("uuidSchema", () => {
+  it.each([
+    { input: "6f1c1f9e-6c5a-4b8e-9a7b-2d3c4e5f6a7b", expected: true },
+    { input: "1 or 1=1", expected: false },
+    { input: "", expected: false },
+  ])("'$input' → $expected", ({ input, expected }) => {
+    expect(uuidSchema.safeParse(input).success).toBe(expected);
   });
 });

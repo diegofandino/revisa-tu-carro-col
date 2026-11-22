@@ -50,6 +50,7 @@ test("edit a vehicle; plates are normalized and unique per account (archived inc
   await signUpAndConfirm(page, uniqueEmail("editar"));
   await addVehicle(page, { alias: "Carro", km: "100", plate: "XYZ987" });
   await page.getByRole("button", { name: "Archivar" }).click();
+  await expect(page).toHaveURL(/\/panel$/);
   await addVehicle(page, { class: "Moto", alias: "Moto", km: "10" });
 
   await page.getByRole("link", { name: "Editar" }).click();
@@ -112,4 +113,17 @@ test("an account_id injected into the form is ignored (the server uses the sessi
   await expect(page.getByRole("heading", { name: "Mío" })).toBeVisible();
   await page.goto("/panel");
   await expect(page.getByRole("link", { name: "Mío" })).toBeVisible();
+});
+
+test("archived list tolerates invalid page parameters", async ({ page }) => {
+  await signUpAndConfirm(page, uniqueEmail("paginas"));
+  for (const query of ["?pagina=abc", "?pagina=-1", "?pagina=99999999", "?pagina=1&pagina=2"]) {
+    const response = await page.goto(`/panel/vehiculos/archivados${query}`);
+    expect(response?.status(), query).toBe(200);
+    await expect(page.getByText("No tienes vehículos archivados.")).toBeVisible();
+  }
+  // A page beyond the last one must not crash the server.
+  const beyond = await page.goto("/panel/vehiculos/archivados?pagina=3");
+  expect(beyond?.status()).toBe(200);
+  await expect(page.getByText("No tienes vehículos archivados.")).toBeVisible();
 });

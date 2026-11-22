@@ -129,3 +129,25 @@ test("a tampered reading id is not found (cannot touch other readings)", async (
   await dialog.getByRole("button", { name: "Guardar corrección" }).click();
   await expect(dialog.getByText("No encontramos esa lectura.")).toBeVisible();
 });
+
+test("the current km is the highest active reading, ignoring deleted ones", async ({ page }) => {
+  await newVehicle(page, "1000");
+  await addReading(page, "500", "2026-01-01");
+  await expect(history(page).getByText("500 km", { exact: true })).toBeVisible();
+  await addReading(page, "1500");
+  await expect(page.getByText("1.500 km (", { exact: false })).toBeVisible();
+
+  // Delete today's 1,500 reading: the current km falls back to the 500 km reading.
+  await history(page)
+    .getByRole("button", { name: /Corregir lectura del/ })
+    .first()
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Corregir lectura" });
+  await dialog.getByLabel("Motivo").fill("Lectura equivocada");
+  await dialog.getByRole("button", { name: "Eliminar lectura" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText("500 km (1 de ene", { exact: false })).toBeVisible();
+
+  await page.goto("/panel");
+  await expect(page.getByRole("listitem").filter({ hasText: "Carro" })).toContainText("500 km · 1 de ene de 2026");
+});

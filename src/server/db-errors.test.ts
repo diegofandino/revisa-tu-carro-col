@@ -1,38 +1,61 @@
 import { describe, expect, it } from "bun:test";
 import { dbErrorMessage, GENERIC_DB_ERROR, NOT_FOUND_MESSAGE } from "./db-errors";
 
-describe("dbErrorMessage", () => {
-  it("explains the vehicle limit with the plan's number", () => {
-    expect(dbErrorMessage({ code: "P0001", message: "vehicle_limit_reached", details: "limit=1" })).toBe(
-      "Tu plan permite 1 vehículo activo. Archiva uno o mejora tu plan.",
-    );
-    expect(dbErrorMessage({ code: "P0001", message: "vehicle_limit_reached", details: "limit=2" })).toBe(
-      "Tu plan permite 2 vehículos activos. Archiva uno o mejora tu plan.",
-    );
-  });
+describe("dbErrorMessage — vehicles and constraints", () => {
+  const cases = [
+    {
+      name: "vehicle limit of 1 (singular)",
+      error: { code: "P0001", message: "vehicle_limit_reached", details: "limit=1" },
+      expected: "Tu plan permite 1 vehículo activo. Archiva uno o mejora tu plan.",
+    },
+    {
+      name: "vehicle limit of 2 (plural)",
+      error: { code: "P0001", message: "vehicle_limit_reached", details: "limit=2" },
+      expected: "Tu plan permite 2 vehículos activos. Archiva uno o mejora tu plan.",
+    },
+    {
+      name: "malformed detail is ignored (falls back to 1)",
+      error: { code: "P0001", message: "vehicle_limit_reached", details: "limit=<script>,x=1" },
+      expected: "Tu plan permite 1 vehículo activo. Archiva uno o mejora tu plan.",
+    },
+    { name: "vehicle not found", error: { code: "P0001", message: "vehicle_not_found" }, expected: NOT_FOUND_MESSAGE },
+    {
+      name: "year out of range",
+      error: { code: "P0001", message: "year_out_of_range" },
+      expected: "El año debe estar entre 1950 y el próximo año.",
+    },
+    {
+      name: "duplicate plate (constraint name is not shown)",
+      error: { code: "23505", message: 'duplicate key value violates "vehicles_account_plate_key"' },
+      expected: "Ya tienes un vehículo con esa placa.",
+    },
+    { name: "check constraint", error: { code: "23514" }, expected: "Revisa los datos e inténtalo de nuevo." },
+    {
+      name: "invalid text representation",
+      error: { code: "22P02" },
+      expected: "Revisa los datos e inténtalo de nuevo.",
+    },
+    { name: "permission denied", error: { code: "42501" }, expected: "No tienes permiso para hacer esto." },
+  ];
 
-  it("ignores malformed or unexpected details", () => {
-    expect(
-      dbErrorMessage({ code: "P0001", message: "vehicle_limit_reached", details: "limit=<script>,x=1" }),
-    ).toContain("1 vehículo");
+  it.each(cases)("$name", ({ error, expected }) => {
+    expect(dbErrorMessage(error)).toBe(expected);
   });
+});
 
-  it("maps known trigger errors and constraint codes", () => {
-    expect(dbErrorMessage({ code: "P0001", message: "vehicle_not_found" })).toBe(NOT_FOUND_MESSAGE);
-    expect(dbErrorMessage({ code: "P0001", message: "year_out_of_range" })).toContain("1950");
-    expect(
-      dbErrorMessage({ code: "23505", message: 'duplicate key value violates "vehicles_account_plate_key"' }),
-    ).toBe("Ya tienes un vehículo con esa placa.");
-    expect(dbErrorMessage({ code: "23514" })).toBe("Revisa los datos e inténtalo de nuevo.");
-    expect(dbErrorMessage({ code: "42501" })).toBe("No tienes permiso para hacer esto.");
-  });
+describe("dbErrorMessage — never leaks internals", () => {
+  const cases = [
+    {
+      name: "unknown trigger message",
+      error: { code: "P0001", message: "internal: relation private.secret does not exist" },
+    },
+    { name: "prototype key", error: { code: "P0001", message: "__proto__" } },
+    { name: "unknown error code", error: { code: "XX000", message: "boom" } },
+    { name: "empty error", error: {} },
+  ];
 
-  it("never leaks unknown messages", () => {
-    const leaky = { code: "P0001", message: "internal: relation private.secret does not exist" };
-    expect(dbErrorMessage(leaky)).toBe(GENERIC_DB_ERROR);
-    expect(dbErrorMessage({ code: "P0001", message: "__proto__" })).toBe(GENERIC_DB_ERROR);
-    expect(dbErrorMessage({ code: "XX000", message: "boom" })).toBe(GENERIC_DB_ERROR);
-    expect(dbErrorMessage({})).toBe(GENERIC_DB_ERROR);
+  it.each(cases)("$name → generic message", ({ error }) => {
+    expect(dbErrorMessage(error)).toBe(GENERIC_DB_ERROR);
   });
 });
 

@@ -548,3 +548,20 @@
     gap: 0.75rem;
   }
 }
+
+@layer components {
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-block: 1rem;
+
+    & a {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: var(--target-size);
+      color: var(--accent);
+    }
+  }
+}
