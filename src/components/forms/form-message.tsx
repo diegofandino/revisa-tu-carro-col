@@ -1,7 +1,10 @@
-import type { AuthFormState } from "@/server/auth/form-state";
+interface MessageState {
+  status: "idle" | "error" | "success";
+  message?: string;
+}
 
 /** Persistent polite live region: its text changes are announced; it is never re-mounted. */
-export function FormMessage({ state }: { state: AuthFormState }) {
+export function FormMessage({ state }: { state: MessageState }) {
   const tone = state.status === "error" ? "form-message form-message-error" : "form-message form-message-success";
   return (
     <div aria-live="polite" aria-atomic="true">
