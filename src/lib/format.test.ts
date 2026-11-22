@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { formatDate, formatInterval, formatKm } from "./format";
+import { formatCop, formatDate, formatInterval, formatKm } from "./format";
 
 describe("formatKm", () => {
   it("uses Colombian thousands separators", () => {
@@ -44,5 +44,15 @@ describe("formatInterval", () => {
     },
   ])("$name", ({ kind, km, months, expected }) => {
     expect(formatInterval(kind, km, months)).toBe(expected);
+  });
+});
+
+describe("formatCop", () => {
+  it.each([
+    { value: 150000, expected: "$\u00a0150.000" },
+    { value: 0, expected: "$\u00a00" },
+    { value: 1000000000, expected: "$\u00a01.000.000.000" },
+  ])("$value → $expected", ({ value, expected }) => {
+    expect(formatCop(value)).toBe(expected);
   });
 });

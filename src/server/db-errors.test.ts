@@ -146,3 +146,32 @@ describe("dbErrorMessage — maintenance rules", () => {
     expect(dbErrorMessage({ code: "23505" }, { duplicate })).toBe(duplicate);
   });
 });
+
+describe("dbErrorMessage — service records", () => {
+  const cases = [
+    {
+      name: "mechanical service without km",
+      error: { code: "P0001", message: "mechanical_requires_km" },
+      expected: "Escribe el kilometraje del vehículo cuando se hizo el servicio.",
+    },
+    {
+      name: "legal document without expiry",
+      error: { code: "P0001", message: "legal_requires_expiry" },
+      expected: "Escribe la fecha de vencimiento que aparece en el documento.",
+    },
+    {
+      name: "voiding twice",
+      error: { code: "P0001", message: "service_record_voided" },
+      expected: "Ese servicio ya fue anulado.",
+    },
+    {
+      name: "editing a service",
+      error: { code: "P0001", message: "service_record_immutable" },
+      expected: "Los servicios no se editan: anúlalo y regístralo de nuevo.",
+    },
+  ];
+
+  it.each(cases)("$name", ({ error, expected }) => {
+    expect(dbErrorMessage(error)).toBe(expected);
+  });
+});

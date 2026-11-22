@@ -28,3 +28,14 @@ export function formatInterval(kind: "mechanical" | "legal", intervalKm: number 
   if (parts.length === 2) return `Cada ${parts[0]} o ${parts[1]} (lo que ocurra primero)`;
   return parts.length === 1 ? `Cada ${parts[0]}` : "Sin intervalo";
 }
+
+const copFormatter = new Intl.NumberFormat(APP_LOCALE, {
+  style: "currency",
+  currency: "COP",
+  maximumFractionDigits: 0,
+});
+
+/** 150000 → "$ 150.000" (Colombian pesos, no decimals). */
+export function formatCop(value: number): string {
+  return copFormatter.format(value);
+}

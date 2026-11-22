@@ -12,7 +12,7 @@ import { addReadingAction, changeReadingAction } from "@/server/readings/actions
 import { listReadings } from "@/server/repositories/readings";
 import { setArchivedAction } from "@/server/vehicles/actions";
 import { loadDashboardContext, loadVehicleOr404 } from "@/server/vehicles/load";
-import { editVehiclePath, rulesPath } from "@/server/vehicles/paths";
+import { editVehiclePath, rulesPath, servicesPath } from "@/server/vehicles/paths";
 
 export const metadata: Metadata = { title: `Vehículo | ${APP_NAME}` };
 
@@ -74,6 +74,9 @@ export default async function VehiclePage({ params }: PageProps<"/panel/vehiculo
       <nav aria-label="Secciones del vehículo" className="section-links">
         <Link href={rulesPath(vehicle.id)} className="btn-secondary btn-link">
           Mantenimientos
+        </Link>
+        <Link href={servicesPath(vehicle.id)} className="btn-secondary btn-link">
+          Servicios
         </Link>
       </nav>
 

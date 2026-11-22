@@ -585,3 +585,20 @@
     appearance: auto;
   }
 }
+
+@layer components {
+  .field-textarea {
+    min-block-size: 6rem;
+    resize: vertical;
+  }
+
+  .choice-check {
+    align-items: flex-start;
+    padding-block: 0.75rem;
+  }
+
+  .reading-item-voided .reading-km {
+    text-decoration: line-through;
+    color: var(--fg-muted);
+  }
+}

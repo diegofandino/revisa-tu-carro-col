@@ -35,6 +35,10 @@ const P0001_MESSAGES: Record<string, (detail: Record<string, string>) => string>
     "SOAT y técnico-mecánica no usan intervalo: se recuerdan por su fecha de vencimiento.",
   type_not_applicable: () => "Ese mantenimiento no aplica para este tipo de vehículo.",
   maintenance_type_not_found: () => "Elige un mantenimiento de la lista.",
+  mechanical_requires_km: () => "Escribe el kilometraje del vehículo cuando se hizo el servicio.",
+  legal_requires_expiry: () => "Escribe la fecha de vencimiento que aparece en el documento.",
+  service_record_voided: () => "Ese servicio ya fue anulado.",
+  service_record_immutable: () => "Los servicios no se editan: anúlalo y regístralo de nuevo.",
 };
 
 /** Parses trigger details like "limit=1" or "previous_km=45000". */
