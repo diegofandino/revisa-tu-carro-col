@@ -56,7 +56,7 @@ select lives_ok(
   'a service with the same km as today''s manual reading is accepted');
 select id as rec from public.service_records where vehicle_id = :'v' \gset
 select results_eq(
-  format($$select km, source::text from public.odometer_readings where vehicle_id = %L and deleted_at is null$$, :'v'),
+  format($$select km, source::text from public.odometer_readings where vehicle_id = %L and deleted_at is null order by source$$, :'v'),
   $$values (30000, 'manual'), (30000, 'service')$$,
   'a service may equal today''s manual reading; both stay in the history (S1)');
 select is((select workshop from public.service_records where id = :'rec'), 'Taller Central', 'workshop is trimmed');

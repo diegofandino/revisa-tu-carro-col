@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { todayInBogota } from "@/domain/maintenance/dates";
 import {
-  KM_MAX,
   PLATE_PATTERN,
   VEHICLE_ALIAS_MAX,
   VEHICLE_CLASSES,
   VEHICLE_TEXT_MAX,
   VEHICLE_YEAR_MIN,
 } from "./constants/vehicle";
+import { kmSchema } from "./km";
 
 /** Same normalization as the database trigger: uppercase, no spaces or hyphens. */
 export function normalizePlate(value: string): string {
@@ -23,13 +23,6 @@ const optionalText = (max: number, label: string) =>
     .nullable()
     .optional()
     .transform((v) => v ?? null);
-
-const wholeNumber = (field: string) =>
-  z
-    .string({ error: `Escribe ${field}.` })
-    .trim()
-    .regex(/^\d+$/, `Escribe ${field} solo con números, sin puntos ni comas.`)
-    .transform(Number);
 
 export const vehicleSchema = z.object({
   class: z.enum(VEHICLE_CLASSES, { error: "Elige si es carro o moto." }),
@@ -70,9 +63,7 @@ export const vehicleSchema = z.object({
 });
 
 export const createVehicleSchema = vehicleSchema.extend({
-  currentKm: wholeNumber("el kilometraje actual").pipe(
-    z.number().max(KM_MAX, "El kilometraje parece demasiado alto. Revísalo."),
-  ),
+  currentKm: kmSchema("el kilometraje actual"),
 });
 
 export type VehicleInput = z.infer<typeof vehicleSchema>;

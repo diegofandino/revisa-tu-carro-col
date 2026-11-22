@@ -1,3 +1,5 @@
+import { formatKm } from "@/lib/format";
+
 /** Minimal shape of PostgREST/Postgres errors returned by supabase-js. */
 export interface DbError {
   code?: string;
@@ -7,6 +9,9 @@ export interface DbError {
 
 export const GENERIC_DB_ERROR = "No pudimos guardar los cambios. Inténtalo de nuevo.";
 export const NOT_FOUND_MESSAGE = "No encontramos ese vehículo.";
+export const READING_NOT_FOUND_MESSAGE = "No encontramos esa lectura.";
+
+const km = (value: string | undefined) => (value ? ` (${formatKm(Number(value))})` : "");
 
 const P0001_MESSAGES: Record<string, (detail: Record<string, string>) => string> = {
   vehicle_limit_reached: (d) =>
@@ -14,6 +19,17 @@ const P0001_MESSAGES: Record<string, (detail: Record<string, string>) => string>
   year_out_of_range: () => "El año debe estar entre 1950 y el próximo año.",
   vehicle_not_found: () => NOT_FOUND_MESSAGE,
   immutable_column: () => "Ese dato no se puede cambiar.",
+  date_in_future: () => "La fecha no puede ser futura.",
+  reading_lower_than_previous: (d) =>
+    `El kilometraje no puede ser menor que el de una lectura anterior${km(d.previous_km)}.`,
+  reading_higher_than_later: (d) =>
+    `El kilometraje no puede ser mayor que el de una lectura posterior${km(d.later_km)}.`,
+  reading_not_higher_same_day: (d) =>
+    `Ese día ya tiene una lectura${km(d.same_day_km)}. Solo puedes registrar un valor mayor.`,
+  correction_reason_required: () => "Escribe un motivo nuevo para esta corrección.",
+  last_reading: () => "No puedes eliminar la única lectura del vehículo.",
+  service_reading_immutable: () => "Esta lectura viene de un servicio. Para corregirla, anula ese servicio.",
+  reading_deleted: () => "Esa lectura ya fue eliminada.",
 };
 
 /** Parses trigger details like "limit=1" or "previous_km=45000". */

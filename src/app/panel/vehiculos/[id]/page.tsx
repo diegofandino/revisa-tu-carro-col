@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AddReadingForm } from "@/components/readings/add-reading-form";
+import { ReadingsHistory } from "@/components/readings/readings-history";
 import { ArchiveButton } from "@/components/vehicles/archive-button";
 import { APP_NAME } from "@/constants/app";
 import { ROUTES } from "@/constants/routes";
+import { todayInBogota } from "@/domain/maintenance/dates";
 import { formatDate, formatKm } from "@/lib/format";
 import { VEHICLE_CLASS_LABELS } from "@/lib/validation/constants/vehicle";
+import { addReadingAction, changeReadingAction } from "@/server/readings/actions";
+import { listReadings } from "@/server/repositories/readings";
 import { setArchivedAction } from "@/server/vehicles/actions";
-import { loadVehicleOr404 } from "@/server/vehicles/load";
+import { loadDashboardContext, loadVehicleOr404 } from "@/server/vehicles/load";
 import { editVehiclePath } from "@/server/vehicles/paths";
 
 export const metadata: Metadata = { title: `Vehículo | ${APP_NAME}` };
@@ -15,6 +20,9 @@ export default async function VehiclePage({ params }: PageProps<"/panel/vehiculo
   const { id } = await params;
   const vehicle = await loadVehicleOr404(id);
   const archived = vehicle.archivedAt !== null;
+  const { supabase } = await loadDashboardContext();
+  const readings = await listReadings(supabase, vehicle.id);
+  const today = todayInBogota();
 
   return (
     <>
@@ -62,6 +70,15 @@ export default async function VehiclePage({ params }: PageProps<"/panel/vehiculo
           </div>
         ) : null}
       </dl>
+
+      {archived ? null : <AddReadingForm action={addReadingAction.bind(null, vehicle.id)} today={today} />}
+
+      <ReadingsHistory
+        readings={readings}
+        changeAction={changeReadingAction.bind(null, vehicle.id)}
+        today={today}
+        editable={!archived}
+      />
 
       <div className="panel-actions">
         {archived ? null : (

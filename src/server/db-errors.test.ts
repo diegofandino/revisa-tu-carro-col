@@ -35,3 +35,57 @@ describe("dbErrorMessage", () => {
     expect(dbErrorMessage({})).toBe(GENERIC_DB_ERROR);
   });
 });
+
+describe("dbErrorMessage — odometer readings", () => {
+  const cases = [
+    {
+      name: "lower than a previous reading, with the km",
+      error: { code: "P0001", message: "reading_lower_than_previous", details: "previous_km=45000" },
+      expected: "El kilometraje no puede ser menor que el de una lectura anterior (45.000 km).",
+    },
+    {
+      name: "higher than a later reading, with the km",
+      error: { code: "P0001", message: "reading_higher_than_later", details: "later_km=12000" },
+      expected: "El kilometraje no puede ser mayor que el de una lectura posterior (12.000 km).",
+    },
+    {
+      name: "not higher than the same day",
+      error: { code: "P0001", message: "reading_not_higher_same_day", details: "same_day_km=50500" },
+      expected: "Ese día ya tiene una lectura (50.500 km). Solo puedes registrar un valor mayor.",
+    },
+    {
+      name: "missing km detail is omitted, not shown as NaN",
+      error: { code: "P0001", message: "reading_lower_than_previous" },
+      expected: "El kilometraje no puede ser menor que el de una lectura anterior.",
+    },
+    {
+      name: "future date",
+      error: { code: "P0001", message: "date_in_future" },
+      expected: "La fecha no puede ser futura.",
+    },
+    {
+      name: "reused correction reason",
+      error: { code: "P0001", message: "correction_reason_required" },
+      expected: "Escribe un motivo nuevo para esta corrección.",
+    },
+    {
+      name: "deleting the only reading",
+      error: { code: "P0001", message: "last_reading" },
+      expected: "No puedes eliminar la única lectura del vehículo.",
+    },
+    {
+      name: "editing a service reading",
+      error: { code: "P0001", message: "service_reading_immutable" },
+      expected: "Esta lectura viene de un servicio. Para corregirla, anula ese servicio.",
+    },
+    {
+      name: "already deleted",
+      error: { code: "P0001", message: "reading_deleted" },
+      expected: "Esa lectura ya fue eliminada.",
+    },
+  ];
+
+  it.each(cases)("$name", ({ error, expected }) => {
+    expect(dbErrorMessage(error)).toBe(expected);
+  });
+});

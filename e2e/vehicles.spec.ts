@@ -1,17 +1,9 @@
-import { devices, expect, type Page, test } from "@playwright/test";
+import { devices, expect, test } from "@playwright/test";
 import { signUpAndConfirm } from "./helpers/auth";
 import { uniqueEmail } from "./helpers/mailpit";
+import { addVehicle } from "./helpers/vehicles";
 
 // New accounts have the default limit of 1 active vehicle.
-
-async function addVehicle(page: Page, v: { class?: "Carro" | "Moto"; alias: string; km: string; plate?: string }) {
-  await page.goto("/panel/vehiculos/nuevo");
-  await page.getByRole("radio", { name: v.class ?? "Carro" }).check();
-  await page.getByLabel("Nombre").fill(v.alias);
-  await page.getByLabel("Kilometraje actual").fill(v.km);
-  if (v.plate) await page.getByLabel("Placa (opcional)").fill(v.plate);
-  await page.getByRole("button", { name: "Agregar vehículo" }).click();
-}
 
 test("create a vehicle with its first reading; the free limit hides the add button", async ({ page }) => {
   await signUpAndConfirm(page, uniqueEmail("vehiculo"));
@@ -20,7 +12,7 @@ test("create a vehicle with its first reading; the free limit hides the add butt
   await addVehicle(page, { alias: "Mi carro", km: "45000", plate: "abc 123" });
   await expect(page).toHaveURL(/\/panel\/vehiculos\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { name: "Mi carro" })).toBeVisible();
-  await expect(page.getByText("45.000 km")).toBeVisible();
+  await expect(page.getByText("45.000 km", { exact: true })).toBeVisible();
   await expect(page.getByText("ABC123")).toBeVisible();
 
   await page.goto("/panel");
@@ -32,6 +24,7 @@ test("create a vehicle with its first reading; the free limit hides the add butt
 test("the server enforces the vehicle limit even through the form URL", async ({ page }) => {
   await signUpAndConfirm(page, uniqueEmail("limite"));
   await addVehicle(page, { alias: "Primero", km: "1000" });
+  await expect(page.getByRole("heading", { name: "Primero" })).toBeVisible();
   await addVehicle(page, { class: "Moto", alias: "Segundo", km: "500" });
   await expect(page.getByText("Tu plan permite 1 vehículo activo. Archiva uno o mejora tu plan.")).toBeVisible();
   await expect(page.getByLabel("Nombre")).toHaveValue("Segundo");
@@ -69,7 +62,7 @@ test("edit a vehicle; plates are normalized and unique per account (archived inc
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(page.getByRole("heading", { name: "Moto roja" })).toBeVisible();
   await expect(page.getByText("ABC12D")).toBeVisible();
-  await expect(page.getByText("10 km")).toBeVisible(); // km is not editable from the form
+  await expect(page.getByText("10 km", { exact: true })).toBeVisible(); // km is not editable from the form
 });
 
 test("the server validates vehicle data even when browser checks are bypassed", async ({ page }) => {
