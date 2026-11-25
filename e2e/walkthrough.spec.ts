@@ -81,7 +81,7 @@ test("walkthrough: sign up → vehicle → readings → rules → services → a
   });
 
   await test.step("7. Configure maintenances: oil change and SOAT", async () => {
-    await page.getByRole("link", { name: "Mantenimientos" }).click();
+    await page.getByRole("link", { name: "Mantenimientos", exact: true }).click();
     const form = page.getByRole("form", { name: "Agregar mantenimiento" });
     await form.getByLabel("Mantenimiento").selectOption({ label: "Cambio de aceite" });
     await form.getByLabel("Cada cuántos km").fill("5.000");
@@ -109,6 +109,21 @@ test("walkthrough: sign up → vehicle → readings → rules → services → a
     await form.getByRole("button", { name: "Registrar servicio" }).click();
     await expect(page.getByText("Servicio registrado: SOAT.")).toBeVisible();
     await shot(page, "servicios");
+  });
+
+  await test.step("8b. Upcoming maintenances: vehicle page and dashboard summary", async () => {
+    await page.getByRole("link", { name: "← Carro de la casa" }).click();
+    const due = page.getByRole("region", { name: "Próximos mantenimientos" });
+    await expect(due.getByRole("heading", { name: "Cambio de aceite" })).toBeVisible();
+    await expect(due).toContainText("Faltan 5.000 km");
+    await expect(due).toContainText(/Vence el 30 de nov\.? de 2027/); // Node and Bun ICU differ on "nov."
+    await due.scrollIntoViewIfNeeded();
+    await shot(page, "proximos-mantenimientos");
+    await page.goto("/panel");
+    await expect(page.getByText("Todo al día")).toBeVisible();
+    await shot(page, "panel-resumen");
+    await page.getByRole("link", { name: "Ver todo de Carro de la casa" }).click();
+    await page.getByRole("link", { name: "Servicios", exact: true }).click();
   });
 
   await test.step("9. Void a service (reason required)", async () => {
@@ -140,7 +155,7 @@ test("walkthrough: sign up → vehicle → readings → rules → services → a
     await page.getByLabel("Correo").fill(email);
     await page.getByLabel("Contraseña", { exact: true }).fill(PASSWORD);
     await page.getByRole("button", { name: "Ingresar" }).click();
-    await expect(page.getByRole("link", { name: "Carro de la casa" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Carro de la casa", exact: true })).toBeVisible();
     await shot(page, "panel-final");
   });
 });

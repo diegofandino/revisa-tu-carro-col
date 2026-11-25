@@ -4,6 +4,8 @@ import { AddServiceForm } from "@/components/services/add-service-form";
 import { ServicesHistory } from "@/components/services/services-history";
 import { APP_NAME } from "@/constants/app";
 import { todayInBogota } from "@/domain/maintenance/dates";
+import { PRESELECT_TYPE_PARAM } from "@/lib/validation/constants/service";
+import { preselectedTypeId } from "@/lib/validation/service";
 import { listMaintenanceTypes } from "@/server/repositories/rules";
 import { listServices } from "@/server/repositories/services";
 import { createServiceAction, voidServiceAction } from "@/server/services/actions";
@@ -12,8 +14,8 @@ import { vehiclePath } from "@/server/vehicles/paths";
 
 export const metadata: Metadata = { title: `Servicios | ${APP_NAME}` };
 
-export default async function ServicesPage({ params }: PageProps<"/panel/vehiculos/[id]/servicios">) {
-  const { id } = await params;
+export default async function ServicesPage({ params, searchParams }: PageProps<"/panel/vehiculos/[id]/servicios">) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const vehicle = await loadVehicleOr404(id);
   const archived = vehicle.archivedAt !== null;
   const { supabase } = await loadDashboardContext();
@@ -21,6 +23,11 @@ export default async function ServicesPage({ params }: PageProps<"/panel/vehicul
   const options = types
     .filter((t) => t.appliesTo.includes(vehicle.class))
     .map((t) => ({ id: t.id, name: t.name, kind: t.kind }));
+  // Untrusted link parameter: kept only if it is one of the types offered for this vehicle.
+  const preselected = preselectedTypeId(
+    query[PRESELECT_TYPE_PARAM],
+    options.map((o) => o.id),
+  );
 
   return (
     <>
@@ -36,7 +43,12 @@ export default async function ServicesPage({ params }: PageProps<"/panel/vehicul
       {archived ? (
         <p className="notice">Desarchiva el vehículo para registrar servicios.</p>
       ) : (
-        <AddServiceForm action={createServiceAction.bind(null, vehicle.id)} options={options} today={todayInBogota()} />
+        <AddServiceForm
+          action={createServiceAction.bind(null, vehicle.id)}
+          options={options}
+          today={todayInBogota()}
+          defaultTypeId={preselected ?? ""}
+        />
       )}
 
       <ServicesHistory services={services} voidAction={voidServiceAction.bind(null, vehicle.id)} editable={!archived} />

@@ -5,7 +5,14 @@ import { VEHICLE_CLASS_LABELS } from "@/lib/validation/constants/vehicle";
 import type { VehicleSummary } from "@/server/repositories/vehicles";
 import { vehiclePath } from "@/server/vehicles/paths";
 
-export function VehicleCard({ vehicle, actions }: { vehicle: VehicleSummary; actions?: ReactNode }) {
+interface VehicleCardProps {
+  vehicle: VehicleSummary;
+  /** Extra content under the km (e.g. upcoming maintenances on the dashboard). */
+  children?: ReactNode;
+  actions?: ReactNode;
+}
+
+export function VehicleCard({ vehicle, children, actions }: VehicleCardProps) {
   const details = [VEHICLE_CLASS_LABELS[vehicle.class], vehicle.brand, vehicle.model, vehicle.year]
     .filter(Boolean)
     .join(" · ");
@@ -23,6 +30,7 @@ export function VehicleCard({ vehicle, actions }: { vehicle: VehicleSummary; act
           <span className="vehicle-card-meta"> · {formatDate(vehicle.lastReadingDate)}</span>
         </p>
       ) : null}
+      {children}
       {actions}
     </li>
   );

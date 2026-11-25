@@ -94,3 +94,16 @@ export function serviceErrorsForKind(
   }
   return expiresOn === null ? { expiresOn: "Escribe la fecha de vencimiento que aparece en el documento." } : null;
 }
+
+/**
+ * Maintenance type pre-selected from a link (`?tipo=<uuid>`, e.g. "Sin registro" on the dashboard).
+ * Untrusted input: only a single value that is one of the types offered for this vehicle is kept.
+ */
+export function preselectedTypeId(
+  raw: string | readonly string[] | undefined,
+  offeredTypeIds: readonly string[],
+): string | null {
+  if (typeof raw !== "string") return null;
+  const parsed = z.uuid().safeParse(raw);
+  return parsed.success && offeredTypeIds.includes(parsed.data) ? parsed.data : null;
+}

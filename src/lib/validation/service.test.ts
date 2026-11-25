@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { addDays, todayInBogota } from "@/domain/maintenance/dates";
 import { fieldErrorsFrom } from "./auth";
-import { createServiceSchema, serviceErrorsForKind, voidServiceSchema } from "./service";
+import { createServiceSchema, preselectedTypeId, serviceErrorsForKind, voidServiceSchema } from "./service";
 
 const TYPE = "6f1c1f9e-6c5a-4b8e-9a7b-2d3c4e5f6a7b";
 const today = todayInBogota();
@@ -86,5 +86,19 @@ describe("voidServiceSchema", () => {
     { name: "tampered id", input: { serviceId: "1 or 1=1", reason: "Registro equivocado" }, ok: false },
   ])("$name → $ok", ({ input, ok }) => {
     expect(voidServiceSchema.safeParse(input).success).toBe(ok);
+  });
+});
+
+describe("preselectedTypeId", () => {
+  const OTHER = "0b8f8c0e-1d2e-4f3a-9b4c-5d6e7f8a9b0c";
+  it.each([
+    { name: "an offered type", raw: TYPE, expected: TYPE },
+    { name: "missing", raw: undefined, expected: null },
+    { name: "repeated parameter", raw: [TYPE, TYPE], expected: null },
+    { name: "not a uuid", raw: "aceite", expected: null },
+    { name: "a type not offered for this vehicle", raw: OTHER, expected: null },
+    { name: "injection attempt", raw: `${TYPE}' or 1=1`, expected: null },
+  ])("$name", ({ raw, expected }) => {
+    expect(preselectedTypeId(raw, [TYPE])).toBe(expected);
   });
 });
