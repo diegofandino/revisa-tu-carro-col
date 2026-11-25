@@ -51,3 +51,6 @@ next-env.d.ts
 # Playwright
 /blob-report/
 /playwright/.cache/
+
+# Walkthrough screenshots (local review only)
+/e2e-screenshots/

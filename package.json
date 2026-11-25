@@ -15,7 +15,8 @@
     "format": "biome format --write",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db && ./supabase/tests/concurrency/vehicle_limit.sh",
-    "db:advisors": "supabase db advisors"
+    "db:advisors": "supabase db advisors",
+    "test:walkthrough": "rm -rf e2e-screenshots/walkthrough && scripts/with-local-supabase.sh playwright test e2e/walkthrough.spec.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

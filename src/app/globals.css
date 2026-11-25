@@ -602,3 +602,85 @@
     color: var(--fg-muted);
   }
 }
+
+/* Mobile layout (task 009c): full-screen dialogs and full-width buttons. */
+@layer components {
+  /* Native select at the same 48px height as the other fields, with a CSS chevron. */
+  select.field-input {
+    appearance: none;
+    padding-inline-end: 2.5rem;
+    background-image:
+      linear-gradient(45deg, transparent 50%, currentColor 50%),
+      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position:
+      calc(100% - 1.25rem) 50%,
+      calc(100% - 0.875rem) 50%;
+    background-size: 0.375rem 0.375rem;
+    background-repeat: no-repeat;
+  }
+
+  /* Rows of actions: each button takes an equal share of the width; one alone takes all of it. */
+  :is(.panel-actions, .section-links, .home-actions) > * {
+    flex: 1 1 8rem;
+  }
+
+  :is(.panel-actions, .section-links, .home-actions) :is(.btn-primary, .btn-secondary, .btn-danger, .btn-small, a) {
+    justify-content: center;
+    inline-size: 100%;
+  }
+
+  .inline-form > button {
+    inline-size: 100%;
+  }
+
+  @media (width < 40rem) {
+    /* List rows stack: content first, then their actions at full width. */
+    .reading-item {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .reading-item > :is(button, .panel-actions, .inline-form) {
+      inline-size: 100%;
+    }
+
+    .reading-item > .btn-small {
+      min-block-size: 44px;
+    }
+
+    /* Dialogs use the whole screen on phones, clear of the notch and home indicator. */
+    .app-dialog:modal {
+      inline-size: 100%;
+      max-inline-size: 100%;
+      block-size: 100dvh;
+      max-block-size: 100dvh;
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+      padding-top: max(1.5rem, env(safe-area-inset-top, 0px));
+      padding-right: max(1rem, env(safe-area-inset-right, 0px));
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+      padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    }
+  }
+}
+
+@layer components {
+  /* Same height for every button sharing a row (Editar + Archivar). */
+  .panel-actions {
+    align-items: stretch;
+
+    & :is(.btn-small, .btn-secondary, .btn-primary, .btn-danger) {
+      min-block-size: 48px;
+    }
+  }
+
+  /* The archive form's live region only takes space when it has a message. */
+  .inline-form {
+    gap: 0;
+
+    & .form-message {
+      margin-block-start: 0.5rem;
+    }
+  }
+}

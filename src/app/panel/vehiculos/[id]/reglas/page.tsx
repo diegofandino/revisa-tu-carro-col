@@ -58,7 +58,8 @@ export default async function RulesPage({ params }: PageProps<"/panel/vehiculos/
                     ) : null}
                     <ArchiveButton
                       action={archiveRuleAction.bind(null, vehicle.id, rule.id)}
-                      label={`Archivar ${rule.maintenanceType.name}`}
+                      label="Archivar"
+                      hiddenLabel={rule.maintenanceType.name}
                       pendingLabel="Archivando…"
                     />
                   </div>
