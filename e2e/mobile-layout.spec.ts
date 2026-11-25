@@ -36,7 +36,7 @@ test("buttons in a row share the full width on a phone", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Carro", exact: true })).toBeVisible();
 
   const links = page.getByRole("navigation", { name: "Secciones del vehículo" });
-  const rules = await links.getByRole("link", { name: "Mantenimientos" }).boundingBox();
+  const rules = await links.getByRole("link", { name: "Mantenimientos", exact: true }).boundingBox();
   const services = await links.getByRole("link", { name: "Servicios" }).boundingBox();
   const row = await links.boundingBox();
   if (!rules || !services || !row) throw new Error("no geometry");
@@ -56,7 +56,7 @@ test("buttons in a row share the full width on a phone", async ({ page }) => {
 test("buttons sharing a row have the same height", async ({ page }) => {
   await signUpAndConfirm(page, uniqueEmail("alturas"));
   await addVehicle(page, { alias: "Carro", km: "1000" });
-  await page.getByRole("link", { name: "Mantenimientos" }).click();
+  await page.getByRole("link", { name: "Mantenimientos", exact: true }).click();
   const form = page.getByRole("form", { name: "Agregar mantenimiento" });
   await form.getByLabel("Mantenimiento").selectOption({ label: "Cambio de aceite" });
   await form.getByLabel("Cada cuántos km").fill("5000");

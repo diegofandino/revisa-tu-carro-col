@@ -6,3 +6,5 @@ export const NOTES_MAX = 1000;
 export const EXPIRY_MAX_YEARS = 10;
 /** Services shown per vehicle (newest first); keeps the query bounded. */
 export const SERVICES_PAGE_SIZE = 50;
+/** Query parameter that pre-selects a maintenance type in the services form (`?tipo=<uuid>`). */
+export const PRESELECT_TYPE_PARAM = "tipo";

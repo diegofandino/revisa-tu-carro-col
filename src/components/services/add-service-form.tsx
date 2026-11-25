@@ -16,15 +16,17 @@ interface AddServiceFormProps {
   /** All types that apply to this vehicle class (services can repeat). */
   options: TypeOption[];
   today: string;
+  /** Pre-selected maintenance type (already validated by the page), or "". */
+  defaultTypeId?: string;
 }
 
-export function AddServiceForm({ action, options, today }: AddServiceFormProps) {
+export function AddServiceForm({ action, options, today, defaultTypeId = "" }: AddServiceFormProps) {
   const [state, formAction] = useActionState(action, INITIAL_FORM_STATE);
   const formRef = useRef<HTMLFormElement>(null);
   useFocusFirstError(formRef, state);
   const failed = state.status === "error";
   const v = (key: string, fallback = "") => (failed ? (state.values?.[key] ?? fallback) : fallback);
-  const [selectedId, setSelectedId] = useState(v("maintenanceTypeId"));
+  const [selectedId, setSelectedId] = useState(v("maintenanceTypeId", defaultTypeId));
   const kind = options.find((o) => o.id === selectedId)?.kind;
   const typeError = state.fieldErrors?.maintenanceTypeId;
 

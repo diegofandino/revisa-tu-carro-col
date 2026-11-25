@@ -7,7 +7,7 @@ async function newVehicleRules(page: Page, cls: "Carro" | "Moto" = "Carro") {
   await signUpAndConfirm(page, uniqueEmail("reglas"));
   await addVehicle(page, { class: cls, alias: cls, km: "1000" });
   await expect(page.getByRole("heading", { name: cls, exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "Mantenimientos" }).click();
+  await page.getByRole("link", { name: "Mantenimientos", exact: true }).click();
   await expect(page.getByRole("heading", { name: `Mantenimientos de ${cls}` })).toBeVisible();
 }
 

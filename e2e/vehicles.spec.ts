@@ -16,7 +16,7 @@ test("create a vehicle with its first reading; the free limit hides the add butt
   await expect(page.getByText("ABC123")).toBeVisible();
 
   await page.goto("/panel");
-  await expect(page.getByRole("link", { name: "Mi carro" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Mi carro", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Agregar vehículo" })).toHaveCount(0);
   await expect(page.getByText("Tu plan permite 1 vehículo activo")).toBeVisible();
 });
@@ -112,7 +112,7 @@ test("an account_id injected into the form is ignored (the server uses the sessi
   await page.getByRole("button", { name: "Agregar vehículo" }).click();
   await expect(page.getByRole("heading", { name: "Mío" })).toBeVisible();
   await page.goto("/panel");
-  await expect(page.getByRole("link", { name: "Mío" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Mío", exact: true })).toBeVisible();
 });
 
 test("archived list tolerates invalid page parameters", async ({ page }) => {
